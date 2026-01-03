@@ -38,13 +38,11 @@ function translate(p,dx=0, dy=0, dz=0) {
 
 function project({x, y, z}) {
     x = x / z;
-    y = -y / z; //invert y axis to be accurate with convention
+    y = y / z; //invert y axis to be accurate with convention
     return {x, y}
 }
 
 function rotate({x, y, z}){
-    p = {x, y, z};
-
     function rotX({x, y, z} ,angle) {
         let cos = Math.cos(angle);
         let sin = Math.sin(angle);
@@ -74,46 +72,52 @@ function rotate({x, y, z}){
             z: z
         }
     }
-    // let options = [rotX, rotY, rotZ];
-    // let pick = Math.round(Math.random() * 2);
-    // options[pick](angle);
-    let p1 = rotX(p, angle);
-    let p2 = rotY(p1, angle);
-    let p3 = rotY(p2, angle);
+    p = {x, y, z};
+    let p1 = rotY(p, angle);
+    let p2 = rotX(p1, angle);
+    let p3 = rotZ(p2, angle);
     p1.z -= 1;
     p2.z -= 1;
     p3.z -= 1;
-    return p3;
+    return p1;
 
 
 }
-    // let pF = {x: (p1.x * p2.x), y: (p1.y * p2.y), z: (p1.z * p2.z)};
 
 function drawLine(p1, p2) {
     ctx.strokeStyle = "lime";
-    // ctx.beginPath(p1.x, p1.y);
-    // ctx.moveTo(p2.x, p2.y);
     ctx.beginPath();
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 2;
     ctx.stroke();
+}
+
+function getTraingleEdge (f) {
+    let v1, v2;
+    let edges = []
+    for (let i = 0 ; i < f.length ; i++) {
+        v1 = f[i];
+        v2 = f[(i + 1) %3];
+        edges.push([v1, v2]);
+    }
+    return edges;
 }
 
 function animate() {
     clear();
     let p1, p2;
-    for (const e of edges) {
-        let v1 = vertices[ e[0] ];
-        let v2 = vertices[ e[1] ];
-        p1 = cordTranslate( project( rotate(v1) ) );
-        p2 = cordTranslate( project( rotate(v2) ) );
-        // console.log(p1, p2);
-        drawLine(p1,p2);
+    for(const f of fs){
+        let triangleEdges = getTraingleEdge(f);
+        // console.log(triangleEdges);
+        triangleEdges.map((i) => {
+            let v1 = vs[ i[0] ];
+            let v2 = vs[ i[1] ];
+            p1 = cordTranslate( project( rotate(v1) ) );
+            p2 = cordTranslate( project( rotate(v2) ) );
+            drawLine(p1, p2);
+        })
     }
-    // for(const p1 of vertices) {
-    //     point(cordTranslate( project( rotate(p1) ) ));
-    // }
     // dz += 1*dt;
     angle += Math.PI / 10 * dt;
     setTimeout(animate, 1000/FPS);
@@ -122,23 +126,9 @@ function animate() {
 const FPS = 60;
 const dt = 1/FPS;
 let angle = 0;
-const vertices = [
-    {x:  0.25, y:  0.25, z:  0.25},
-    {x: -0.25, y:  0.25, z:  0.25},
-    {x: -0.25, y: -0.25, z:  0.25},
-    {x:  0.25, y: -0.25, z:  0.25},
 
-    {x:  0.25, y:  0.25, z: -0.25},
-    {x: -0.25, y:  0.25, z: -0.25},
-    {x: -0.25, y: -0.25, z: -0.25},
-    {x:  0.25, y: -0.25, z: -0.25},
-]
 
-const edges = [
-    [0, 1], [1, 2], [2, 3], [3, 0],
-    [4, 5], [5, 6], [6, 7], [7, 4],
-    [0, 4], [1, 5], [2, 6], [3, 7]
-]
+
 clear();
+// console.log(fs);
 animate();
-
