@@ -2,6 +2,12 @@
 
 const body = document.querySelector("body");
 const canvas = document.getElementById("canvas");
+const rotBtn = document.querySelector("#rotToggle");
+rotBtn.addEventListener("click", toggleRot);
+
+function toggleRot(){
+    canRotate = !canRotate;
+}
 const ctx = canvas.getContext("2d");
 let h = canvas.height;
 let w = canvas.width;
@@ -10,6 +16,7 @@ let ct = 0;
 // let ZnegBtn = document.querySelector("#Zneg");
 // let XposBtn = document.querySelector("#Xpos");
 // body.appendChild(ZnegBtn);
+
 
 function clear() {
     ctx.fillStyle = "#050223ff";
@@ -37,6 +44,7 @@ function translate(p,dx=0, dy=0, dz=0) {
 }
 
 function project({x, y, z}) {
+    z -= 1;
     x = x / z;
     y = y / z; //invert y axis to be accurate with convention
     return {x, y}
@@ -76,9 +84,6 @@ function rotate({x, y, z}){
     let p1 = rotY(p, angle);
     let p2 = rotX(p1, angle);
     let p3 = rotZ(p2, angle);
-    p1.z -= 1;
-    p2.z -= 1;
-    p3.z -= 1;
     return p1;
 
 
@@ -113,13 +118,19 @@ function animate() {
         triangleEdges.map((i) => {
             let v1 = vs[ i[0] ];
             let v2 = vs[ i[1] ];
-            p1 = cordTranslate( project( rotate(v1) ) );
-            p2 = cordTranslate( project( rotate(v2) ) );
+            if(canRotate){
+                p1 = cordTranslate( project( rotate(v1) ) );
+                p2 = cordTranslate( project( rotate(v2) ) );
+            }
+            else {
+                p1 = cordTranslate( project( v1 ) );
+                p2 = cordTranslate( project( v2 ) );
+            }
             drawLine(p1, p2);
         })
     }
     // dz += 1*dt;
-    angle += Math.PI / 10 * dt;
+    if(canRotate) angle += Math.PI / 10 * dt;
     setTimeout(animate, 1000/FPS);
 }
 
@@ -127,7 +138,7 @@ const FPS = 60;
 const dt = 1/FPS;
 let angle = 0;
 
-
+let canRotate = true;
 
 clear();
 // console.log(fs);
