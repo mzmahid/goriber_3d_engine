@@ -3,6 +3,7 @@
 const body = document.querySelector("body");
 const canvas = document.getElementById("canvas");
 const rotBtn = document.querySelector("#rotToggle");
+const transList = document.querySelector(".trans");
 rotBtn.addEventListener("click", toggleRot);
 
 function toggleRot(){
@@ -39,14 +40,17 @@ function cordTranslate({x, y}) {
 }
 
 function translate(p,dx=0, dy=0, dz=0) {
-    p.z -= dz;
-    return p;
+    return {
+        x : p.x + dx,
+        y : p.y - dy,
+        z : p.z - dz,
+    }
 }
 
 function project({x, y, z}) {
-    z -= 1;
     x = x / z;
     y = y / z; //invert y axis to be accurate with convention
+    // y += 0.5;
     return {x, y}
 }
 
@@ -94,7 +98,7 @@ function drawLine(p1, p2) {
     ctx.beginPath();
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1;
     ctx.stroke();
 }
 
@@ -109,37 +113,78 @@ function getTraingleEdge (f) {
     return edges;
 }
 
+transList.addEventListener("click", (e) => {
+    target = e.target;
+    let mul;
+    if(target.textContent === "+") {
+        mul = 1;
+    } else if(target.textContent === "-") {
+        mul = -1;
+    } else {
+        return; // Not a +/- button, ignore
+    }
+    let xTrans = 0;
+    let yTrans = 0;
+    let zTrans = 0;
+    if(target.classList.contains("zTrans")) {
+        zTrans = mul * 0.1;
+    } else if(target.classList.contains("xTrans")) {
+        xTrans = mul * 0.1;
+    } else if(target.classList.contains("yTrans")) {
+        yTrans = mul * 0.1;
+    }
+    updateTransVector(xTrans, yTrans, zTrans);
+
+})
+
+function updateTransVector(x, y, z){
+    t[0] += x;
+    t[1] += y;
+    t[2] += z;
+}
+
+
 function animate() {
+    if(canRotate)
+        rotatedVertices = vs.map(v => rotate(v));
+    else rotatedVertices = vs;
     clear();
     let p1, p2;
-    for(const f of fs){
-        let triangleEdges = getTraingleEdge(f);
-        // console.log(triangleEdges);
-        triangleEdges.map((i) => {
-            let v1 = vs[ i[0] ];
-            let v2 = vs[ i[1] ];
-            if(canRotate){
-                p1 = cordTranslate( project( rotate(v1) ) );
-                p2 = cordTranslate( project( rotate(v2) ) );
-            }
-            else {
-                p1 = cordTranslate( project( v1 ) );
-                p2 = cordTranslate( project( v2 ) );
-            }
-            drawLine(p1, p2);
-        })
+    for (const [idx1, idx2] of edges){
+        // console.log(t);
+        let x1 = translate(rotatedVertices[idx1], t[0], t[1] , t[2]);
+        let x2 = translate(rotatedVertices[idx2], t[0], t[1] , t[2]);
+        // t[0] = 0;
+        // t[1] = 0;
+        // t[2] = 0;
+
+        let v1 = project(x1);
+        let v2 = project(x2);
+
+        p1 = cordTranslate(  v1 );
+        p2 = cordTranslate( v2 );
+        drawLine(p1, p2);
+
     }
     // dz += 1*dt;
-    if(canRotate) angle += Math.PI / 10 * dt;
+    angle += Math.PI / 10 * dt;
     setTimeout(animate, 1000/FPS);
 }
 
-const FPS = 60;
+const FPS = 12;
 const dt = 1/FPS;
 let angle = 0;
 
-let canRotate = true;
+let canRotate = false;
+let edges = [];
+let t = [0, 0, 1];
 
 clear();
-// console.log(fs);
+
+for(const f of fs){
+    let triangleEdges = getTraingleEdge(f);
+    edges.push(...triangleEdges);
+}
+// edges is an array of arrays that contain two 3d cord object for a single line
+
 animate();
