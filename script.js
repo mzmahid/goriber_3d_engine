@@ -42,15 +42,14 @@ function cordTranslate({x, y}) {
 function translate(p,dx=0, dy=0, dz=0) {
     return {
         x : p.x + dx,
-        y : p.y - dy,
-        z : p.z - dz,
+        y : p.y + dy,
+        z : p.z - dz, // invert z axis to math right hand rule
     }
 }
 
 function project({x, y, z}) {
-    x = x / z;
-    y = y / z; //invert y axis to be accurate with convention
-    // y += 0.5;
+    x = x / Math.abs(z);
+    y = -y / Math.abs(z); //invert y axis for right hand rule
     return {x, y}
 }
 
@@ -126,12 +125,12 @@ transList.addEventListener("click", (e) => {
     let xTrans = 0;
     let yTrans = 0;
     let zTrans = 0;
-    if(target.classList.contains("zTrans")) {
-        zTrans = mul * 0.1;
-    } else if(target.classList.contains("xTrans")) {
-        xTrans = mul * 0.1;
+    if(target.classList.contains("xTrans")) {
+        xTrans = mul * 0.5;
     } else if(target.classList.contains("yTrans")) {
-        yTrans = mul * 0.1;
+        yTrans = mul * 0.5;
+    } else if(target.classList.contains("zTrans")) {    
+        zTrans = mul * 0.5;
     }
     updateTransVector(xTrans, yTrans, zTrans);
 
@@ -151,12 +150,8 @@ function animate() {
     clear();
     let p1, p2;
     for (const [idx1, idx2] of edges){
-        // console.log(t);
         let x1 = translate(rotatedVertices[idx1], t[0], t[1] , t[2]);
         let x2 = translate(rotatedVertices[idx2], t[0], t[1] , t[2]);
-        // t[0] = 0;
-        // t[1] = 0;
-        // t[2] = 0;
 
         let v1 = project(x1);
         let v2 = project(x2);
@@ -175,16 +170,29 @@ const FPS = 12;
 const dt = 1/FPS;
 let angle = 0;
 
-let canRotate = false;
+let canRotate = true;
+let N = 100000;
+const seen = new Set();
 let edges = [];
-let t = [0, 0, 1];
+let uniqueEdges = [];
+let t = [0, -2, 4];
 
 clear();
+// for(const f of fs){ let triangleEdges = getTraingleEdge(f); edges.push(...triangleEdges); }
 
 for(const f of fs){
     let triangleEdges = getTraingleEdge(f);
-    edges.push(...triangleEdges);
+    for (const [a, b] of triangleEdges) {
+        const key = a < b ? a * N + b : b * N + a;
+        if(!seen.has(key)) {
+            seen.add(key);
+            edges.push([a,b]);
+        }
+    }
 }
+
+console.log(edges.length);
+
 // edges is an array of arrays that contain two 3d cord object for a single line
 
 animate();
