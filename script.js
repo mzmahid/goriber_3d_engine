@@ -186,6 +186,32 @@ function animate(currentTime) {
         rotatedVertices = vs.map(v => rotate(v));
     else rotatedVertices = vs;
     clear();
+
+    for(let face of fs) {
+        i1 = face[0];
+        i2 = face[1];
+        i3 = face[2];
+        let v_2 = rotatedVertices[i1];
+        let v_1 = rotatedVertices[i2];
+        let v_3 = rotatedVertices[i3];
+
+        let normalVec = cross(disVec(v_1, v_3), disVec(v_1, v_2));
+        let surfCenter = {
+            x: (v_1.x + v_2.x + v_3.x) / 3,
+            y: (v_1.y + v_2.y + v_3.y) / 3,
+            z: (v_1.z + v_2.z + v_3.z) / 3,
+        }
+        let normalEnd = {
+            x: surfCenter.x + normalVec.x * 1,
+            y: surfCenter.y + normalVec.y * 1,
+            z: surfCenter.z + normalVec.z * 1,
+        }
+        surfCenter = cordTranslate(project(translate(surfCenter, t[0], t[1], t[2])));
+        normalEnd = cordTranslate(project(translate(normalEnd, t[0], t[1], t[2])));
+
+        drawLine(surfCenter, normalEnd, "red");
+    }
+
     let p1, p2;
     for (const [idx1, idx2] of edges){
         let x1 = translate(rotatedVertices[idx1], t[0], t[1] , t[2]);
