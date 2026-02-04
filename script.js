@@ -92,8 +92,8 @@ function rotate({x, y, z}){
 
 }
 
-function drawLine(p1, p2) {
-    ctx.strokeStyle = "lime";
+function drawLine(p1, p2, color = "lime") {
+    ctx.strokeStyle = color;
     ctx.beginPath();
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
@@ -110,6 +110,16 @@ function getTraingleEdge (f) {
         edges.push([v1, v2]);
     }
     return edges;
+}
+
+function fillTriangle(p1, p2, p3) {
+    ctx.fillStyle = "rgba(255, 0, 255, 1)";
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.closePath();
+    ctx.fill();
 }
 
 transList.addEventListener("click", (e) => {
@@ -142,8 +152,36 @@ function updateTransVector(x, y, z){
     t[2] += z;
 }
 
+function cross(p1, p2) { //vector corss product
+    return {
+        x: p1.y * p2.z - p1.z * p2.y,
+        y: p1.z * p2.x - p1.x * p2.z,
+        z: p1.x * p2.y - p1.y * p2.x,
+    }
+}
 
-function animate() {
+function disVec(p1, p2) { // distance from vector A to B
+    // console.log(x1, y2);
+    return {
+        x: p2.x - p1.x,
+        y: p2.y - p1.y,
+        z: p2.z - p1.z,
+    }
+}   
+
+let frame = 0;
+let fps = 0;
+let lastTime = performance.now();
+
+function animate(currentTime) {
+    frame++;
+    if(currentTime - lastTime >= 1000) {
+        fps = frame;
+        console.log(`FPS = ${fps}`);
+        frame = 0;
+        lastTime = currentTime;
+    }
+
     if(canRotate)
         rotatedVertices = vs.map(v => rotate(v));
     else rotatedVertices = vs;
@@ -156,17 +194,16 @@ function animate() {
         let v1 = project(x1);
         let v2 = project(x2);
 
-        p1 = cordTranslate(  v1 );
-        p2 = cordTranslate( v2 );
+        p1 = cordTranslate(v1);
+        p2 = cordTranslate(v2);
         drawLine(p1, p2);
 
     }
-    // dz += 1*dt;
     angle += Math.PI / 10 * dt;
-    setTimeout(animate, 1000/FPS);
+    requestAnimationFrame(animate)
 }
 
-const FPS = 12;
+const FPS = 24;
 const dt = 1/FPS;
 let angle = 0;
 
@@ -175,10 +212,10 @@ let N = 100000;
 const seen = new Set();
 let edges = [];
 let uniqueEdges = [];
-let t = [0, -2, 4];
+// let t = [0, -2, 4];
+let t = [0, 0, 1];
 
 clear();
-// for(const f of fs){ let triangleEdges = getTraingleEdge(f); edges.push(...triangleEdges); }
 
 for(const f of fs){
     let triangleEdges = getTraingleEdge(f);
@@ -191,8 +228,7 @@ for(const f of fs){
     }
 }
 
-console.log(edges.length);
 
 // edges is an array of arrays that contain two 3d cord object for a single line
 
-animate();
+requestAnimationFrame(animate);
